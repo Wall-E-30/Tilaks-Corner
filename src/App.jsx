@@ -101,6 +101,8 @@ function App() {
               currentCategoryIndex={currentCategoryIndex}
               viewMode={viewMode}
               onCylinderClick={openCategory}
+              onNextCategory={goNextCategory}
+              onPrevCategory={goPrevCategory}
             />
           )}
 
