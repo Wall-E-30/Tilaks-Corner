@@ -14,12 +14,13 @@ export default function AboutPage({ contactOpen, onToggleContact }) {
         <div className="about-page__label">Profile</div>
         <div className="about-page__content">
           <div className="about-page__bio">
-            Based in India.
-            Full Stack Developer &amp; Creative
-            Engineer. Building performant,
-            scalable applications with a focus on
-            user experience, real-time systems,
-            and AI/ML integration.
+            <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', color: 'var(--color-black)' }}>Tilak</h3>
+            <div style={{ fontSize: '15px', fontStyle: 'italic', marginBottom: '16px', opacity: 0.85, color: 'var(--color-text)' }}>
+              Third-Year Computer Science Student | Full-Stack Developer
+            </div>
+            <p style={{ fontSize: '14px', lineHeight: '1.6', color: 'var(--color-text-muted)' }}>
+              A dedicated computer science student with a strong foundation in software engineering, full-stack web development, and database management. Experienced in building scalable applications, tackling real-world automation challenges through hackathons, and integrating AI/ML technologies into practical web solutions.
+            </p>
           </div>
 
           <div className="about-page__contact-list">
