@@ -375,12 +375,14 @@ ul, ol { list-style: none; }
 
 .category-page__img-wrapper {
   width: 100%;
+  max-width: 480px;
   position: relative;
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: 12px;
   cursor: pointer;
   opacity: 0;
   animation: fadeSlideUp 0.7s ease forwards;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16);
 }
 
 .category-page__img-wrapper:nth-child(1) { animation-delay: 0.3s; }
@@ -514,12 +516,13 @@ ul, ol { list-style: none; }
 }
 
 .grid-view__item {
-  aspect-ratio: 4/3;
+  aspect-ratio: 600/760;
   overflow: hidden;
-  border-radius: 3px;
+  border-radius: 12px;
   cursor: pointer;
   opacity: 0;
   animation: fadeIn 0.5s ease forwards;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .grid-view__item:nth-child(1) { animation-delay: 0.1s; }

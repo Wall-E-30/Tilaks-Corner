@@ -7,27 +7,7 @@ import AboutPage from './pages/AboutPage'
 import GalleryOverlay from './components/GalleryOverlay'
 import Controls from './components/Controls'
 
-// Portfolio categories adapted for developer portfolio
-const categories = [
-  {
-    id: 'projects',
-    name: 'Projects',
-    images: [], // will be generated
-    color: '#d4e4f7',
-  },
-  {
-    id: 'experiments',
-    name: 'Experiments',
-    images: [],
-    color: '#e8d4f0',
-  },
-  {
-    id: 'design',
-    name: 'Design',
-    images: [],
-    color: '#f0e4d4',
-  },
-]
+import { portfolioData as categories } from './utils/portfolioData'
 
 function App() {
   const [loading, setLoading] = useState(true)
