@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import * as THREE from 'three'
 import gsap from 'gsap'
-import { useCategoryImages } from '../utils/imageGen'
+import { useCategoryHeadingImages } from '../utils/imageGen'
 
 export default function Home({
   categories,
@@ -9,7 +9,8 @@ export default function Home({
   viewMode,
   onCylinderClick,
   onNextCategory,
-  onPrevCategory
+  onPrevCategory,
+  onCategorySelect
 }) {
   const canvasRef = useRef(null)
   const sceneRef = useRef(null)
@@ -18,13 +19,15 @@ export default function Home({
   const cylinderRef = useRef(null)
   const reflectionRef = useRef(null)
   const rafRef = useRef(null)
-  const mouseRef = useRef({ x: 0, y: 0 })
-  const targetRotRef = useRef({ x: 0, y: 0 })
+  
+  // Physics and rotation states
+  const baseRotYRef = useRef(-0.2 * Math.PI - (currentCategoryIndex / 5) * Math.PI * 2)
   const currentRotRef = useRef({ x: 0, y: 0 })
-  const autoRotRef = useRef(0)
   const isDraggingRef = useRef(false)
   const lastMouseRef = useRef({ x: 0, y: 0 })
-
+  const mouseDownPosRef = useRef({ x: 0, y: 0 })
+  const snapTweenRef = useRef(null)
+  
   // Ref for the category label to animate it
   const labelRef = useRef(null)
 
@@ -32,8 +35,13 @@ export default function Home({
   const [localCategoryIndex, setLocalCategoryIndex] = useState(currentCategoryIndex)
   const isTransitioningRef = useRef(false)
 
-  const images = useCategoryImages(localCategoryIndex)
+  const images = useCategoryHeadingImages()
   const categoryName = categories[localCategoryIndex]?.name || 'Projects'
+
+  // Helper to calculate target rotation Y for any category index
+  const getTargetRotationY = useCallback((index) => {
+    return -0.2 * Math.PI - (index / 5) * Math.PI * 2
+  }, [])
 
   // Create the 3D scene
   useEffect(() => {
@@ -57,9 +65,9 @@ export default function Home({
     rendererRef.current = renderer
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9)
     scene.add(ambientLight)
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6)
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5)
     dirLight.position.set(2, 3, 4)
     scene.add(dirLight)
 
@@ -81,85 +89,52 @@ export default function Home({
     }
   }, [])
 
-  // Handle prop changes of currentCategoryIndex to kick off exit transitions
+  // Handle category snaps when currentCategoryIndex updates from external triggers (scroll, keyboard, controls)
   useEffect(() => {
-    if (currentCategoryIndex === localCategoryIndex) return
-    if (isTransitioningRef.current) return
+    setLocalCategoryIndex(currentCategoryIndex)
 
-    isTransitioningRef.current = true
+    const targetY = getTargetRotationY(currentCategoryIndex)
 
-    // Exit animation timeline
-    const timeline = gsap.timeline({
-      onComplete: () => {
-        setLocalCategoryIndex(currentCategoryIndex)
-      }
-    })
+    if (snapTweenRef.current) snapTweenRef.current.kill()
 
-    if (cylinderRef.current && reflectionRef.current) {
-      timeline.to(cylinderRef.current.scale, {
-        x: 0, y: 0, z: 0,
-        duration: 0.4,
-        ease: 'power2.inOut'
-      }, 0)
+    // Animate base rotation to snap the active category to the center-front
+    snapTweenRef.current = gsap.timeline()
+    
+    snapTweenRef.current.to(baseRotYRef, {
+      current: targetY,
+      duration: 0.7,
+      ease: 'power2.out'
+    }, 0)
 
-      timeline.to(reflectionRef.current.scale, {
-        x: 0, y: 0, z: 0,
-        duration: 0.4,
-        ease: 'power2.inOut'
-      }, 0)
-
-      timeline.to(cylinderRef.current.rotation, {
-        y: cylinderRef.current.rotation.y + Math.PI * 0.4,
-        duration: 0.4,
-        ease: 'power2.inOut'
-      }, 0)
-    } else {
-      setLocalCategoryIndex(currentCategoryIndex)
-      isTransitioningRef.current = false
-    }
+    snapTweenRef.current.to(currentRotRef.current, {
+      x: 0,
+      duration: 0.7,
+      ease: 'power2.out'
+    }, 0)
 
     if (labelRef.current) {
-      timeline.to(labelRef.current, {
-        opacity: 0,
-        y: -15,
-        duration: 0.3,
-        ease: 'power2.inOut'
-      }, 0)
+      gsap.fromTo(labelRef.current,
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }
+      )
     }
-  }, [currentCategoryIndex, localCategoryIndex])
+  }, [currentCategoryIndex, getTargetRotationY])
 
-  // Create/update cylinder when images or category changes
+  // Create cylinder meshes once
   useEffect(() => {
     const scene = sceneRef.current
     if (!scene || images.length === 0) return
 
-    // Remove old cylinder
-    if (cylinderRef.current) {
-      scene.remove(cylinderRef.current)
-      cylinderRef.current.traverse((child) => {
-        if (child.isMesh) {
-          child.geometry.dispose()
-          if (child.material.map) child.material.map.dispose()
-          child.material.dispose()
-        }
-      })
-    }
-    if (reflectionRef.current) {
-      scene.remove(reflectionRef.current)
-      reflectionRef.current.traverse((child) => {
-        if (child.isMesh) {
-          child.geometry.dispose()
-          child.material.dispose()
-        }
-      })
-    }
+    // Remove old group
+    if (cylinderRef.current) scene.remove(cylinderRef.current)
+    if (reflectionRef.current) scene.remove(reflectionRef.current)
 
     const group = new THREE.Group()
     const reflectionGroup = new THREE.Group()
 
     const radius = 1.4
     const height = 1.8
-    const segments = images.length
+    const segments = images.length // 5
 
     // Create Cylinder panel segments
     images.forEach((src, i) => {
@@ -236,6 +211,7 @@ export default function Home({
       applyRoundedShader(material, panelAspect)
 
       const panel = new THREE.Mesh(geometry, material)
+      panel.userData = { index: i }
       group.add(panel)
 
       // Reflection panel
@@ -243,7 +219,7 @@ export default function Home({
         map: texture,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.25,
+        opacity: 0.22,
         roughness: 0.5,
         metalness: 0.1,
       })
@@ -252,6 +228,7 @@ export default function Home({
       const refPanel = new THREE.Mesh(geometry, refMaterial)
       refPanel.position.y = -height - 0.05
       refPanel.scale.y = -1
+      refPanel.userData = { index: i }
       reflectionGroup.add(refPanel)
     })
 
@@ -293,46 +270,27 @@ export default function Home({
     cylinderRef.current = group
     reflectionRef.current = reflectionGroup
 
-    // Reset rotation and start entrance animation
-    autoRotRef.current = 0
-    targetRotRef.current = { x: 0, y: 0 }
-    currentRotRef.current = { x: 0, y: 0 }
-
-    // Start with scale 0 and spin rotation
+    // Set initial position and scale entrance
     group.scale.set(0, 0, 0)
     reflectionGroup.scale.set(0, 0, 0)
-    group.rotation.y = -Math.PI * 0.4
-    reflectionGroup.rotation.y = -Math.PI * 0.4
+    
+    // Position initial angle
+    group.rotation.y = baseRotYRef.current
+    reflectionGroup.rotation.y = baseRotYRef.current
 
     gsap.to(group.scale, {
       x: 1, y: 1, z: 1,
-      duration: 0.6,
-      ease: 'power2.out',
-      onComplete: () => {
-        isTransitioningRef.current = false
-      }
+      duration: 0.8,
+      ease: 'power3.out'
     })
     gsap.to(reflectionGroup.scale, {
       x: 1, y: 1, z: 1,
-      duration: 0.6,
-      ease: 'power2.out'
+      duration: 0.8,
+      ease: 'power3.out'
     })
-    gsap.to(group.rotation, {
-      y: 0,
-      duration: 0.6,
-      ease: 'power2.out'
-    })
-
-    if (labelRef.current) {
-      gsap.fromTo(labelRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 0.5, y: 0, duration: 0.5, ease: 'power2.out' }
-      )
-    }
-
   }, [images])
 
-  // Animation loop
+  // Animation frame loop
   useEffect(() => {
     const renderer = rendererRef.current
     const scene = sceneRef.current
@@ -342,25 +300,16 @@ export default function Home({
     const animate = () => {
       rafRef.current = requestAnimationFrame(animate)
 
-      autoRotRef.current += 0.003
-
       if (cylinderRef.current) {
-        // Lerp rotation
-        currentRotRef.current.x += (targetRotRef.current.x - currentRotRef.current.x) * 0.05
-        currentRotRef.current.y += (targetRotRef.current.y - currentRotRef.current.y) * 0.05
-
-        // Only apply mouse/auto rotation if we are not transitioning
-        if (!isTransitioningRef.current) {
-          cylinderRef.current.rotation.y = autoRotRef.current + currentRotRef.current.x
-          cylinderRef.current.rotation.x = currentRotRef.current.y * 0.1
-        }
+        // Smooth transition of rotation including drag offset
+        cylinderRef.current.rotation.y = baseRotYRef.current + currentRotRef.current.x
+        // Subtle tilt sway on mouse Y
+        cylinderRef.current.rotation.x += (currentRotRef.current.y * 0.1 - cylinderRef.current.rotation.x) * 0.05
       }
-      if (reflectionRef.current) {
-        // Match rotation only if not transitioning
-        if (!isTransitioningRef.current) {
-          reflectionRef.current.rotation.y = cylinderRef.current?.rotation.y || 0
-          reflectionRef.current.rotation.x = cylinderRef.current?.rotation.x || 0
-        }
+
+      if (reflectionRef.current && cylinderRef.current) {
+        reflectionRef.current.rotation.y = cylinderRef.current.rotation.y
+        reflectionRef.current.rotation.x = cylinderRef.current.rotation.x
       }
 
       renderer.render(scene, camera)
@@ -371,55 +320,143 @@ export default function Home({
     return () => cancelAnimationFrame(rafRef.current)
   }, [])
 
-  // Mouse interaction for cylinder rotation
+  // Mouse & touch drag controls + click raycasting
   useEffect(() => {
     const container = canvasRef.current
     if (!container) return
 
     const onMouseDown = (e) => {
-      if (isTransitioningRef.current) return
       isDraggingRef.current = true
       lastMouseRef.current = { x: e.clientX, y: e.clientY }
+      mouseDownPosRef.current = { x: e.clientX, y: e.clientY }
+      container.style.cursor = 'grabbing'
+      if (snapTweenRef.current) snapTweenRef.current.pause()
     }
 
     const onMouseMove = (e) => {
-      if (isDraggingRef.current && !isTransitioningRef.current) {
-        const dx = e.clientX - lastMouseRef.current.x
-        const dy = e.clientY - lastMouseRef.current.y
-        targetRotRef.current.x += dx * 0.005
-        targetRotRef.current.y += dy * 0.005
-        targetRotRef.current.y = Math.max(-0.3, Math.min(0.3, targetRotRef.current.y))
-        lastMouseRef.current = { x: e.clientX, y: e.clientY }
-      }
+      if (!isDraggingRef.current) return
+      const dx = e.clientX - lastMouseRef.current.x
+      const dy = e.clientY - lastMouseRef.current.y
+      
+      // Update temporary rotation offsets
+      currentRotRef.current.x += dx * 0.007
+      currentRotRef.current.y += dy * 0.005
+      currentRotRef.current.y = Math.max(-0.4, Math.min(0.4, currentRotRef.current.y))
+
+      lastMouseRef.current = { x: e.clientX, y: e.clientY }
     }
 
-    const onMouseUp = () => {
+    const onMouseUp = (e) => {
+      if (!isDraggingRef.current) return
       isDraggingRef.current = false
+      container.style.cursor = 'grab'
+
+      // Check pointer travel distance to differentiate clicks from drags
+      const dragDistance = Math.sqrt(
+        Math.pow(e.clientX - mouseDownPosRef.current.x, 2) +
+        Math.pow(e.clientY - mouseDownPosRef.current.y, 2)
+      )
+
+      if (dragDistance < 4) {
+        // It's a click! Perform Raycasting
+        const mouse = new THREE.Vector2()
+        const raycaster = new THREE.Raycaster()
+        const rect = container.getBoundingClientRect()
+
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+
+        if (cameraRef.current && cylinderRef.current) {
+          raycaster.setFromCamera(mouse, cameraRef.current)
+          const intersects = raycaster.intersectObjects(cylinderRef.current.children, true)
+          const panelHit = intersects.find(hit => hit.object.userData && hit.object.userData.index !== undefined)
+
+          if (panelHit) {
+            const clickedIndex = panelHit.object.userData.index
+            if (clickedIndex === currentCategoryIndex) {
+              onCylinderClick()
+            } else {
+              onCategorySelect(clickedIndex)
+            }
+            return
+          }
+        }
+      }
+
+      // If it was a drag, perform snapping math
+      const netY = baseRotYRef.current + currentRotRef.current.x
+      const calculatedIndex = Math.round(- (netY + 0.2 * Math.PI) / (Math.PI * 2 / 5))
+      const nearestIndex = ((calculatedIndex % 5) + 5) % 5
+
+      onCategorySelect(nearestIndex)
+    }
+
+    // Touch Support
+    const onTouchStart = (e) => {
+      isDraggingRef.current = true
+      lastMouseRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      mouseDownPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      if (snapTweenRef.current) snapTweenRef.current.pause()
+    }
+
+    const onTouchMove = (e) => {
+      if (!isDraggingRef.current) return
+      const dx = e.touches[0].clientX - lastMouseRef.current.x
+      const dy = e.touches[0].clientY - lastMouseRef.current.y
+      
+      currentRotRef.current.x += dx * 0.007
+      currentRotRef.current.y += dy * 0.005
+      currentRotRef.current.y = Math.max(-0.4, Math.min(0.4, currentRotRef.current.y))
+
+      lastMouseRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    }
+
+    const onTouchEnd = (e) => {
+      if (!isDraggingRef.current) return
+      isDraggingRef.current = false
+
+      const dragDistance = Math.sqrt(
+        Math.pow(e.changedTouches[0].clientX - mouseDownPosRef.current.x, 2) +
+        Math.pow(e.changedTouches[0].clientY - mouseDownPosRef.current.y, 2)
+      )
+
+      if (dragDistance < 4) {
+        // Treat touch click on active category as select/open
+        const mouse = new THREE.Vector2()
+        const raycaster = new THREE.Raycaster()
+        const rect = container.getBoundingClientRect()
+
+        mouse.x = ((e.changedTouches[0].clientX - rect.left) / rect.width) * 2 - 1
+        mouse.y = -((e.changedTouches[0].clientY - rect.top) / rect.height) * 2 + 1
+
+        if (cameraRef.current && cylinderRef.current) {
+          raycaster.setFromCamera(mouse, cameraRef.current)
+          const intersects = raycaster.intersectObjects(cylinderRef.current.children, true)
+          const panelHit = intersects.find(hit => hit.object.userData && hit.object.userData.index !== undefined)
+
+          if (panelHit) {
+            const clickedIndex = panelHit.object.userData.index
+            if (clickedIndex === currentCategoryIndex) {
+              onCylinderClick()
+            } else {
+              onCategorySelect(clickedIndex)
+            }
+            return
+          }
+        }
+      }
+
+      // Snapping math
+      const netY = baseRotYRef.current + currentRotRef.current.x
+      const calculatedIndex = Math.round(- (netY + 0.2 * Math.PI) / (Math.PI * 2 / 5))
+      const nearestIndex = ((calculatedIndex % 5) + 5) % 5
+
+      onCategorySelect(nearestIndex)
     }
 
     container.addEventListener('mousedown', onMouseDown)
     window.addEventListener('mousemove', onMouseMove)
     window.addEventListener('mouseup', onMouseUp)
-
-    // Touch
-    const onTouchStart = (e) => {
-      if (isTransitioningRef.current) return
-      isDraggingRef.current = true
-      lastMouseRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
-    }
-    const onTouchMove = (e) => {
-      if (isDraggingRef.current && !isTransitioningRef.current) {
-        const dx = e.touches[0].clientX - lastMouseRef.current.x
-        const dy = e.touches[0].clientY - lastMouseRef.current.y
-        targetRotRef.current.x += dx * 0.005
-        targetRotRef.current.y += dy * 0.005
-        targetRotRef.current.y = Math.max(-0.3, Math.min(0.3, targetRotRef.current.y))
-        lastMouseRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
-      }
-    }
-    const onTouchEnd = () => {
-      isDraggingRef.current = false
-    }
 
     container.addEventListener('touchstart', onTouchStart, { passive: true })
     container.addEventListener('touchmove', onTouchMove, { passive: true })
@@ -433,12 +470,12 @@ export default function Home({
       container.removeEventListener('touchmove', onTouchMove)
       container.removeEventListener('touchend', onTouchEnd)
     }
-  }, [])
+  }, [currentCategoryIndex, onCategorySelect, onCylinderClick])
 
   // Scroll and touch swipe detection for category navigation
   useEffect(() => {
     let lastScrollTime = 0
-    const cooldown = 1000 // 1 second cooldown between switches
+    const cooldown = 750
 
     const handleWheel = (e) => {
       if (isTransitioningRef.current) return
@@ -446,7 +483,7 @@ export default function Home({
       const now = Date.now()
       if (now - lastScrollTime < cooldown) return
 
-      if (Math.abs(e.deltaY) > 30) {
+      if (Math.abs(e.deltaY) > 20) {
         if (e.deltaY > 0) {
           onNextCategory()
         } else {
@@ -456,38 +493,10 @@ export default function Home({
       }
     }
 
-    let touchStartY = 0
-    const handleTouchStart = (e) => {
-      touchStartY = e.touches[0].clientY
-    }
-
-    const handleTouchEnd = (e) => {
-      if (isTransitioningRef.current) return
-
-      const touchEndY = e.changedTouches[0].clientY
-      const deltaY = touchStartY - touchEndY
-      const now = Date.now()
-
-      if (now - lastScrollTime < cooldown) return
-
-      if (Math.abs(deltaY) > 50) {
-        if (deltaY > 0) {
-          onNextCategory()
-        } else {
-          onPrevCategory()
-        }
-        lastScrollTime = now
-      }
-    }
-
     window.addEventListener('wheel', handleWheel, { passive: true })
-    window.addEventListener('touchstart', handleTouchStart, { passive: true })
-    window.addEventListener('touchend', handleTouchEnd, { passive: true })
 
     return () => {
       window.removeEventListener('wheel', handleWheel)
-      window.removeEventListener('touchstart', handleTouchStart)
-      window.removeEventListener('touchend', handleTouchEnd)
     }
   }, [onNextCategory, onPrevCategory])
 
@@ -501,7 +510,6 @@ export default function Home({
       <div
         className="home__canvas"
         ref={canvasRef}
-        onDoubleClick={onCylinderClick}
         style={{ cursor: 'grab' }}
       />
 
