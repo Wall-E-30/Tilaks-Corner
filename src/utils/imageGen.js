@@ -214,3 +214,250 @@ function shiftColor(hex, amount) {
 export function useCategoryImages(categoryIndex) {
   return useMemo(() => generateCategoryImages(categoryIndex), [categoryIndex])
 }
+
+export function generateCategoryHeadingImages() {
+  const headings = [
+    { title: 'ABOUT ME', subtitle: 'Personal Bio & Vision' },
+    { title: 'SKILLS & ACHIEVEMENTS', subtitle: 'Core Competencies' },
+    { title: 'FEATURED PROJECTS', subtitle: 'Interactive Works' },
+    { title: 'HACKATHONS', subtitle: 'Competition History' },
+    { title: 'CREATIVE PORTFOLIO', subtitle: 'Media & Creative' }
+  ]
+
+  const palettes = [
+    ['#00c6ff', '#0072ff'], // About Me
+    ['#11998e', '#38ef7d'], // Skills
+    ['#ff5e62', '#ff9966'], // Projects
+    ['#6a11cb', '#2575fc'], // Hackathons
+    ['#ffe259', '#ffa751']  // Creative
+  ]
+
+  return headings.map((item, i) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 600
+    canvas.height = 760
+    const ctx = canvas.getContext('2d')
+    const [startColor, endColor] = palettes[i]
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height)
+    grad.addColorStop(0, startColor)
+    grad.addColorStop(1, endColor)
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    // Add radial overlay glow
+    const radGrad = ctx.createRadialGradient(
+      canvas.width * 0.5, canvas.height * 0.4, 100,
+      canvas.width * 0.5, canvas.height * 0.5, canvas.height * 0.6
+    )
+    radGrad.addColorStop(0, 'rgba(255, 255, 255, 0.15)')
+    radGrad.addColorStop(1, 'rgba(0, 0, 0, 0.45)')
+    ctx.fillStyle = radGrad
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    // Grid pattern
+    ctx.globalAlpha = 0.08
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = 1.5
+    for (let x = 0; x < canvas.width; x += 60) {
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, canvas.height)
+      ctx.stroke()
+    }
+    for (let y = 0; y < canvas.height; y += 60) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(canvas.width, y)
+      ctx.stroke()
+    }
+    ctx.globalAlpha = 1.0
+
+    // Draw unique category-specific abstract visual artwork (background images)
+    if (i === 0) {
+      // ABOUT ME: Intersecting orbital paths & floating particles
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(canvas.width / 2, canvas.height / 2, 140, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.arc(canvas.width / 2, canvas.height / 2, 220, 0, Math.PI * 2)
+      ctx.stroke()
+      
+      // Floating glowing rings
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)'
+      ctx.beginPath()
+      ctx.ellipse(canvas.width / 2, canvas.height / 2, 280, 100, Math.PI / 6, 0, Math.PI * 2)
+      ctx.stroke()
+
+      // Dotted glowing points
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.25)'
+      for (let p = 0; p < 12; p++) {
+        ctx.beginPath()
+        ctx.arc(120 + p * 40 + Math.sin(p) * 15, 150 + p * 45, 3 + (p % 4), 0, Math.PI * 2)
+        ctx.fill()
+      }
+    } else if (i === 1) {
+      // SKILLS: Neural net / connection nodes
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'
+      ctx.lineWidth = 1.5
+      const points = [
+        { x: 120, y: 150 }, { x: 480, y: 160 }, { x: 180, y: 300 },
+        { x: 420, y: 280 }, { x: 150, y: 460 }, { x: 450, y: 480 },
+        { x: 220, y: 620 }, { x: 380, y: 600 }, { x: 300, y: 380 }
+      ]
+      ctx.beginPath()
+      for (let p = 0; p < points.length; p++) {
+        for (let q = p + 1; q < points.length; q++) {
+          const dist = Math.hypot(points[p].x - points[q].x, points[p].y - points[q].y)
+          if (dist < 220) {
+            ctx.moveTo(points[p].x, points[p].y)
+            ctx.lineTo(points[q].x, points[q].y)
+          }
+        }
+      }
+      ctx.stroke()
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
+      points.forEach(pt => {
+        ctx.beginPath()
+        ctx.arc(pt.x, pt.y, 6, 0, Math.PI * 2)
+        ctx.fill()
+      })
+    } else if (i === 2) {
+      // PROJECTS: Clean layout grid and layered screen shapes
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'
+      ctx.beginPath()
+      ctx.roundRect(80, 160, 440, 160, 16)
+      ctx.fill()
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'
+      ctx.stroke()
+
+      ctx.beginPath()
+      ctx.roundRect(140, 480, 320, 180, 16)
+      ctx.fill()
+      ctx.stroke()
+
+      // Drawing code-like lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'
+      ctx.lineWidth = 4
+      for (let lineY = 510; lineY < 630; lineY += 25) {
+        ctx.beginPath()
+        ctx.moveTo(170, lineY)
+        ctx.lineTo(170 + Math.random() * 180 + 60, lineY)
+        ctx.stroke()
+      }
+    } else if (i === 3) {
+      // HACKATHONS: Fast sine waves / heartbeats representing momentum
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      for (let x = 30; x < canvas.width - 30; x += 8) {
+        const y = 380 + Math.sin(x * 0.04) * 110 * Math.sin(x * 0.005)
+        if (x === 30) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.stroke()
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)'
+      ctx.beginPath()
+      for (let x = 30; x < canvas.width - 30; x += 8) {
+        const y = 410 + Math.cos(x * 0.03 + 1.5) * 80
+        if (x === 30) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.stroke()
+    } else if (i === 4) {
+      // CREATIVE: Shutter aperture geometry & light rays
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      for (let r = 0; r < 12; r++) {
+        const angle = (r / 12) * Math.PI * 2
+        ctx.moveTo(canvas.width / 2, canvas.height / 2)
+        ctx.lineTo(canvas.width / 2 + Math.cos(angle) * 320, canvas.height / 2 + Math.sin(angle) * 320)
+      }
+      ctx.stroke()
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)'
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.04)'
+      ctx.beginPath()
+      ctx.arc(canvas.width / 2, canvas.height / 2, 160, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.stroke()
+    }
+
+    // Large background watermark index
+    ctx.globalAlpha = 0.09
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 280px "Playfair Display", Georgia, serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(String(i + 1).padStart(2, '0'), canvas.width / 2, canvas.height / 2 - 40)
+    ctx.globalAlpha = 1.0
+
+    // Draw card border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'
+    ctx.lineWidth = 3
+    ctx.beginPath()
+    ctx.roundRect(30, 30, canvas.width - 60, canvas.height - 60, 20)
+    ctx.stroke()
+
+    // Frosted Glassmorphism center card to guarantee extreme text readability
+    const cardW = 480
+    const cardH = 260
+    const cardX = (canvas.width - cardW) / 2
+    const cardY = (canvas.height - cardH) / 2 - 10
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)' // Dark translucent overlay
+    ctx.beginPath()
+    ctx.roundRect(cardX, cardY, cardW, cardH, 16)
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)' // Delicate border
+    ctx.lineWidth = 1.5
+    ctx.stroke()
+
+    // Title wrapping/displaying inside the card
+    ctx.fillStyle = '#ffffff'
+    ctx.textAlign = 'center'
+    
+    // Split title into words if it's too long
+    ctx.font = '900 40px "Inter", sans-serif'
+    ctx.textBaseline = 'middle'
+    
+    const words = item.title.split(' ')
+    const cardCenterY = cardY + cardH / 2 - 15
+
+    if (words.length > 1) {
+      // Draw stacked title
+      ctx.fillText(words[0], canvas.width / 2, cardCenterY - 24)
+      if (words.length > 2) {
+        ctx.fillText(words.slice(1).join(' '), canvas.width / 2, cardCenterY + 24)
+      } else {
+        ctx.fillText(words[1], canvas.width / 2, cardCenterY + 24)
+      }
+    } else {
+      ctx.fillText(item.title, canvas.width / 2, cardCenterY)
+    }
+
+    // Subtitle inside the card
+    ctx.font = 'italic 18px "Playfair Display", Georgia, serif'
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'
+    ctx.fillText(item.subtitle, canvas.width / 2, cardY + cardH - 55)
+
+    // Category number label at top of the panel
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
+    ctx.font = 'bold 13px "Inter", sans-serif'
+    ctx.letterSpacing = '4px'
+    ctx.textBaseline = 'top'
+    ctx.fillText(`SECTION 0${i + 1}`, canvas.width / 2, 65)
+
+    return canvas.toDataURL('image/jpeg', 0.95)
+  })
+}
+
+export function useCategoryHeadingImages() {
+  return useMemo(() => generateCategoryHeadingImages(), [])
+}

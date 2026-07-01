@@ -83,6 +83,7 @@ function App() {
               onCylinderClick={openCategory}
               onNextCategory={goNextCategory}
               onPrevCategory={goPrevCategory}
+              onCategorySelect={setCurrentCategoryIndex}
             />
           )}
 
@@ -115,8 +116,14 @@ function App() {
               categoryIndex={currentCategoryIndex}
               imageIndex={galleryImageIndex}
               onClose={closeGallery}
-              onNext={() => setGalleryImageIndex((i) => (i + 1) % 6)}
-              onPrev={() => setGalleryImageIndex((i) => (i - 1 + 6) % 6)}
+              onNext={() => {
+                const len = categories[currentCategoryIndex]?.items?.length || 1
+                setGalleryImageIndex((i) => (i + 1) % len)
+              }}
+              onPrev={() => {
+                const len = categories[currentCategoryIndex]?.items?.length || 1
+                setGalleryImageIndex((i) => (i - 1 + len) % len)
+              }}
             />
           )}
 
