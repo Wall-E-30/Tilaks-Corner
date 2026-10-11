@@ -6,6 +6,17 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.agent/
+.agents/
+.gemini/
+.gsd/
+adapters/
+docs/
+scripts/
+
+GSD-STYLE.md 
+model_capabilities.yaml
+PROJECT_RULES.md 
 
 node_modules
 dist
