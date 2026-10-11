@@ -10,6 +10,7 @@ export default function ContactTransmissionPage({ onNavigate }) {
   const [transmitting, setTransmitting] = useState(false);
   const [transmitted, setTransmitted] = useState(false);
   const [waveOffset, setWaveOffset] = useState(0);
+  const [hasSecretClearance, setHasSecretClearance] = useState(false);
 
   const frequencies = [
     { id: 'Internship', label: '142.0 MHz: Summer Internship', channel: 'INTERNSHIP', mhz: '142.0 MHz', color: 'var(--aurora-teal)' },
@@ -19,6 +20,28 @@ export default function ContactTransmissionPage({ onNavigate }) {
   ];
 
   const currentFreqObj = frequencies.find(f => f.id === frequency) || frequencies[0];
+
+  useEffect(() => {
+    try {
+      const hash = window.location.hash || '';
+      if (hash.includes('clearance')) {
+        setHasSecretClearance(true);
+        setFrequency('Hi');
+        setFormData((prev) => ({
+          ...prev,
+          message: 'STELLAR-CURIOUS: Commander Tilak, I decrypted your subspace transmission frequency! Excited to connect.'
+        }));
+      } else if (hash.includes('collab:')) {
+        const raw = hash.replace(/^#/, '');
+        const ideaTitle = decodeURIComponent(raw.split('collab:')[1] || '');
+        setFrequency('Collaboration');
+        setFormData((prev) => ({
+          ...prev,
+          message: `Commander Tilak, I saw your Moon of Ideas experiment "${ideaTitle}". Let's build this together!`
+        }));
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -138,6 +161,34 @@ export default function ContactTransmissionPage({ onNavigate }) {
             <span>SIGNAL LATENCY: Earth speed 0.0s // Mars orbit: ~12.4 min</span>
           </div>
         </div>
+
+        {/* Secret Clearance Verified Banner */}
+        {hasSecretClearance && (
+          <div
+            style={{
+              marginBottom: '24px',
+              padding: '14px 22px',
+              borderRadius: '24px',
+              border: '1.5px solid var(--aurora-teal)',
+              background: 'radial-gradient(circle at 10% 10%, rgba(45, 226, 198, 0.2) 0%, rgba(5, 6, 15, 0.9) 100%)',
+              boxShadow: '0 0 30px rgba(45, 226, 198, 0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.8rem',
+              color: 'var(--aurora-teal)',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textAlign: 'center'
+            }}
+          >
+            <span>✦</span>
+            <span>SECRET TRANSMISSION CLEARANCE VERIFIED // PRIORITY DISPATCH ACTIVE</span>
+            <span>✦</span>
+          </div>
+        )}
 
         {/* Live Audio / Frequency Waveform Visualizer (Organic rounded dish display) */}
         <div

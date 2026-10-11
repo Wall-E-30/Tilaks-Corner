@@ -190,7 +190,11 @@ export default function OrbitAmbitionsPage({ onNavigate }) {
           {/* Floating Craft Positioning Over The SVG */}
           {/* LEO Rocket */}
           <div
+            tabIndex={0}
+            role="button"
+            aria-label="Orbit 1: Low Earth Orbit (Now, 0-3 Months)"
             onClick={() => { sound.playClick(); setActiveRingIndex(0); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sound.playClick(); setActiveRingIndex(0); } }}
             style={{
               position: 'absolute',
               top: '100px',
@@ -198,7 +202,8 @@ export default function OrbitAmbitionsPage({ onNavigate }) {
               cursor: 'pointer',
               filter: activeRingIndex === 0 ? 'drop-shadow(0 0 14px var(--aurora-teal))' : 'none',
               transform: activeRingIndex === 0 ? 'scale(1.15)' : 'scale(1)',
-              transition: 'all 200ms ease'
+              transition: 'all 200ms ease',
+              outline: 'none'
             }}
           >
             <WhimsicalRocket size={34} angle={-45} />
@@ -206,7 +211,11 @@ export default function OrbitAmbitionsPage({ onNavigate }) {
 
           {/* GEO Satellite */}
           <div
+            tabIndex={0}
+            role="button"
+            aria-label="Orbit 2: Geostationary Orbit (6 Months)"
             onClick={() => { sound.playClick(); setActiveRingIndex(1); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sound.playClick(); setActiveRingIndex(1); } }}
             style={{
               position: 'absolute',
               top: '75px',
@@ -214,7 +223,8 @@ export default function OrbitAmbitionsPage({ onNavigate }) {
               cursor: 'pointer',
               filter: activeRingIndex === 1 ? 'drop-shadow(0 0 14px var(--stardust-gold))' : 'none',
               transform: activeRingIndex === 1 ? 'scale(1.15)' : 'scale(1)',
-              transition: 'all 200ms ease'
+              transition: 'all 200ms ease',
+              outline: 'none'
             }}
           >
             <WhimsicalSatellite size={42} />
@@ -222,7 +232,11 @@ export default function OrbitAmbitionsPage({ onNavigate }) {
 
           {/* Interplanetary UFO */}
           <div
+            tabIndex={0}
+            role="button"
+            aria-label="Orbit 3: Interplanetary Orbit (2 Years)"
             onClick={() => { sound.playClick(); setActiveRingIndex(2); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sound.playClick(); setActiveRingIndex(2); } }}
             style={{
               position: 'absolute',
               bottom: '50px',
@@ -230,7 +244,8 @@ export default function OrbitAmbitionsPage({ onNavigate }) {
               cursor: 'pointer',
               filter: activeRingIndex === 2 ? 'drop-shadow(0 0 14px var(--solar-coral))' : 'none',
               transform: activeRingIndex === 2 ? 'scale(1.15)' : 'scale(1)',
-              transition: 'all 200ms ease'
+              transition: 'all 200ms ease',
+              outline: 'none'
             }}
           >
             <WhimsicalUFO size={44} />
@@ -238,7 +253,11 @@ export default function OrbitAmbitionsPage({ onNavigate }) {
 
           {/* Deep Cosmos Spacewalker */}
           <div
+            tabIndex={0}
+            role="button"
+            aria-label="Orbit 4: Deep Cosmos Trajectory (Someday)"
             onClick={() => { sound.playClick(); setActiveRingIndex(3); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sound.playClick(); setActiveRingIndex(3); } }}
             style={{
               position: 'absolute',
               top: '30px',
@@ -246,7 +265,8 @@ export default function OrbitAmbitionsPage({ onNavigate }) {
               cursor: 'pointer',
               filter: activeRingIndex === 3 ? 'drop-shadow(0 0 14px var(--magenta-nova))' : 'none',
               transform: activeRingIndex === 3 ? 'scale(1.15)' : 'scale(1)',
-              transition: 'all 200ms ease'
+              transition: 'all 200ms ease',
+              outline: 'none'
             }}
           >
             <WhimsicalAstronautFloating size={48} />

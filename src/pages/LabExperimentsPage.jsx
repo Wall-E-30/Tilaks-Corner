@@ -10,9 +10,25 @@ import {
   WhimsicalUFO
 } from '../components/CosmicWhimsyElements';
 
-export default function LabExperimentsPage({ onNavigate }) {
-  const [activeTab, setActiveTab] = useState('moon'); // 'moon' | 'lab'
+export default function LabExperimentsPage({ onNavigate, activeSubTab = 'moon', onSubTabChange }) {
+  const [activeTab, setActiveTab] = useState(activeSubTab || 'moon');
   const [copiedIdea, setCopiedIdea] = useState(null);
+
+  useEffect(() => {
+    if (activeSubTab) {
+      setActiveTab(activeSubTab);
+    }
+  }, [activeSubTab]);
+
+  const handleTabSwitch = (newTab) => {
+    sound.playClick();
+    setActiveTab(newTab);
+    if (onSubTabChange) {
+      onSubTabChange(newTab);
+    } else if (onNavigate) {
+      onNavigate(newTab === 'moon' ? 'lab/moon' : 'lab');
+    }
+  };
 
   const labNotes = [
     {
@@ -127,10 +143,7 @@ export default function LabExperimentsPage({ onNavigate }) {
           {/* Whimsical Capsule Pill Switcher */}
           <div style={{ display: 'inline-flex', gap: '8px', marginTop: '28px', background: 'rgba(5, 6, 15, 0.7)', padding: '6px', borderRadius: '30px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <button
-              onClick={() => {
-                sound.playClick();
-                setActiveTab('moon');
-              }}
+              onClick={() => handleTabSwitch('moon')}
               onMouseEnter={() => sound.playHover()}
               style={{
                 fontSize: '0.82rem',
@@ -149,10 +162,7 @@ export default function LabExperimentsPage({ onNavigate }) {
               🌙 Moon of Ideas ({UNFINISHED_IDEAS.length})
             </button>
             <button
-              onClick={() => {
-                sound.playClick();
-                setActiveTab('lab');
-              }}
+              onClick={() => handleTabSwitch('lab')}
               onMouseEnter={() => sound.playHover()}
               style={{
                 fontSize: '0.82rem',
@@ -296,6 +306,9 @@ export default function LabExperimentsPage({ onNavigate }) {
                       onClick={() => {
                         sound.playClick();
                         setCopiedIdea(idea.id);
+                        try {
+                          window.location.hash = encodeURIComponent('collab:' + idea.title);
+                        } catch {}
                         onNavigate('contact');
                       }}
                       style={{

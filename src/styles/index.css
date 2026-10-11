@@ -107,6 +107,24 @@ html, body {
   outline-offset: 3px !important;
 }
 
+/* WCAG 2.2 AA Mobile Touch Target Compliance (Criterion 2.5.8) */
+@media (max-width: 1023px) {
+  button,
+  .btn-cosmic,
+  .btn-secondary,
+  .btn-fast-lane,
+  .mobile-menu-btn,
+  .hud-icon-btn,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .hud-star-counter {
+    min-height: 38px;
+  }
+}
+
 /* Film Grain Texture Overlay */
 .film-grain {
   position: fixed;

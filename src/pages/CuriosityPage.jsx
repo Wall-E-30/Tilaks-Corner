@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { sound } from '../utils/audioEngine';
 import { CURIOSITIES_BLACK_HOLE } from '../utils/mindverseData';
 import SubpageAtmosphere from '../components/SubpageAtmosphere';
@@ -12,6 +12,16 @@ import {
 
 export default function CuriosityPage({ onNavigate }) {
   const [selectedCuriosity, setSelectedCuriosity] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && selectedCuriosity) {
+        setSelectedCuriosity(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedCuriosity]);
 
   return (
     <SubpageAtmosphere
@@ -221,10 +231,20 @@ export default function CuriosityPage({ onNavigate }) {
               <AsteroidPod
                 key={idx}
                 accentColor="var(--magenta-nova)"
+                tabIndex={0}
+                role="button"
+                aria-label={`Curiosity: ${item.topic}, pull: ${item.pull}. Press Enter to view orbit details.`}
                 onMouseEnter={() => sound.playHover()}
                 onClick={() => {
                   sound.playClick();
                   setSelectedCuriosity(item);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    sound.playClick();
+                    setSelectedCuriosity(item);
+                  }
                 }}
                 style={{
                   borderRadius: currentRadius,
@@ -298,6 +318,9 @@ export default function CuriosityPage({ onNavigate }) {
         {/* Selected Curiosity Detail Overlay Modal */}
         {selectedCuriosity && (
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Curiosity Orbit Details: ${selectedCuriosity.topic}`}
             style={{
               position: 'fixed',
               top: 0,

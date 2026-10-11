@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import MissionControl from './components/MissionControl';
 import AstronautGuide from './components/AstronautGuide';
 import ShootingStars from './components/ShootingStars';
@@ -6,19 +6,24 @@ import WarpTransition from './components/WarpTransition';
 import CursorShip from './components/CursorShip';
 import QuickTourOverlay from './components/QuickTourOverlay';
 import RocketLaunchIntro from './components/RocketLaunchIntro';
+import AudioPermissionPrompt from './components/AudioPermissionPrompt';
+import HyperspaceLoader from './components/HyperspaceLoader';
 
+// Eagerly loaded launchpad for instant hero LCP
 import HomePage from './pages/HomePage';
-import FastLanePage from './pages/FastLanePage';
-import ProjectDetailPage from './pages/ProjectDetailPage';
-import ConstellationPage from './pages/ConstellationPage';
-import CockpitSkillsPage from './pages/CockpitSkillsPage';
-import AboutAstronautPage from './pages/AboutAstronautPage';
-import LabExperimentsPage from './pages/LabExperimentsPage';
-import CuriosityPage from './pages/CuriosityPage';
-import OrbitAmbitionsPage from './pages/OrbitAmbitionsPage';
-import ContactTransmissionPage from './pages/ContactTransmissionPage';
-import SecretSignalPage from './pages/SecretSignalPage';
-import NotFoundPage from './pages/NotFoundPage';
+
+// Lazy-loaded deep space sectors for optimal bundle footprint
+const FastLanePage = lazy(() => import('./pages/FastLanePage'));
+const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'));
+const ConstellationPage = lazy(() => import('./pages/ConstellationPage'));
+const CockpitSkillsPage = lazy(() => import('./pages/CockpitSkillsPage'));
+const AboutAstronautPage = lazy(() => import('./pages/AboutAstronautPage'));
+const LabExperimentsPage = lazy(() => import('./pages/LabExperimentsPage'));
+const CuriosityPage = lazy(() => import('./pages/CuriosityPage'));
+const OrbitAmbitionsPage = lazy(() => import('./pages/OrbitAmbitionsPage'));
+const ContactTransmissionPage = lazy(() => import('./pages/ContactTransmissionPage'));
+const SecretSignalPage = lazy(() => import('./pages/SecretSignalPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 import { sound } from './utils/audioEngine';
 import { PROJECTS_DATA } from './utils/mindverseData';
@@ -33,6 +38,7 @@ export default function App() {
   const [quickTourActive, setQuickTourActive] = useState(false);
   const [caughtStarsCount, setCaughtStarsCount] = useState(0);
   const [showRocketLaunch, setShowRocketLaunch] = useState(false);
+  const [labSubTab, setLabSubTab] = useState('moon');
 
   // Initialize caught stars from localStorage
   useEffect(() => {
@@ -46,7 +52,19 @@ export default function App() {
 
   // Sync with browser URL / history on initial load and popstate
   const syncRouteFromPath = useCallback(() => {
-    const path = window.location.pathname.replace(/\/+$/, '') || '/';
+    let path = window.location.pathname.replace(/\/+$/, '') || '/';
+
+    // Support SPA redirect parameter (e.g. from GitHub Pages 404.html: ?p=/fast-lane)
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectParam = searchParams.get('p') || searchParams.get('path');
+      if (redirectParam) {
+        const decoded = decodeURIComponent(redirectParam);
+        path = decoded.replace(/\/+$/, '') || '/';
+        window.history.replaceState({}, '', path + (window.location.hash || ''));
+      }
+    } catch {}
+
     if (path === '/' || path === '') {
       setCurrentPage('home');
       setSelectedProjectSlug(null);
@@ -65,8 +83,12 @@ export default function App() {
       setCurrentPage('skills');
     } else if (path === '/about') {
       setCurrentPage('about');
-    } else if (path === '/lab' || path === '/lab/moon') {
+    } else if (path === '/lab/moon') {
       setCurrentPage('lab');
+      setLabSubTab('moon');
+    } else if (path === '/lab') {
+      setCurrentPage('lab');
+      setLabSubTab('lab');
     } else if (path === '/curiosity') {
       setCurrentPage('curiosity');
     } else if (path === '/orbit') {
@@ -102,6 +124,14 @@ export default function App() {
       newPath = `/projects/${projectSlug}`;
       newPage = 'project-detail';
       setSelectedProjectSlug(projectSlug);
+    } else if (targetPage === 'lab/moon') {
+      newPath = '/lab/moon';
+      newPage = 'lab';
+      setLabSubTab('moon');
+    } else if (targetPage === 'lab') {
+      newPath = slug === 'moon' ? '/lab/moon' : '/lab';
+      newPage = 'lab';
+      setLabSubTab(slug === 'moon' ? 'moon' : 'lab');
     } else {
       newPath = `/${targetPage}`;
     }
@@ -166,6 +196,9 @@ export default function App() {
       keyBuffer = (keyBuffer + e.key.toLowerCase()).slice(-7);
       if (keyBuffer === 'houston') {
         sound.playWarp();
+        try {
+          window.location.hash = 'clearance';
+        } catch {}
         navigateTo('contact');
         keyBuffer = '';
       }
@@ -219,11 +252,17 @@ export default function App() {
 
       {/* Shooting Stars Trivia System (Always active except during Fast Lane) */}
       {currentPage !== 'fast-lane' && (
-        <ShootingStars
-          caughtCount={caughtStarsCount}
-          onStarCaught={handleStarCaught}
-          onNavigate={navigateTo}
-        />
+        <>
+          <ShootingStars
+            caughtCount={caughtStarsCount}
+            onStarCaught={handleStarCaught}
+            onNavigate={navigateTo}
+          />
+          <AudioPermissionPrompt
+            isSoundActive={soundActive}
+            onToggleSound={toggleSound}
+          />
+        </>
       )}
 
       {/* Floating Astronaut Mascot Guide */}
@@ -246,94 +285,98 @@ export default function App() {
 
       {/* Page Routing */}
       <main id="main-content" role="main">
-        {currentPage === 'home' && (
-          <HomePage
-            onSelectProject={handleSelectProject}
-            onHoverPlanet={setHoveredPlanet}
-            onNavigate={navigateTo}
-            onStartQuickTour={() => setQuickTourActive(true)}
-            onRelaunchRocket={() => setShowRocketLaunch(true)}
-          />
-        )}
+        <Suspense fallback={<HyperspaceLoader />}>
+          {currentPage === 'home' && (
+            <HomePage
+              onSelectProject={handleSelectProject}
+              onHoverPlanet={setHoveredPlanet}
+              onNavigate={navigateTo}
+              onStartQuickTour={() => setQuickTourActive(true)}
+              onRelaunchRocket={() => setShowRocketLaunch(true)}
+            />
+          )}
 
-        {currentPage === 'fast-lane' && (
-          <FastLanePage
-            onSelectProject={(proj) => navigateTo('project-detail', proj.slug)}
-            onNavigate={navigateTo}
-          />
-        )}
+          {currentPage === 'fast-lane' && (
+            <FastLanePage
+              onSelectProject={(proj) => navigateTo('project-detail', proj.slug)}
+              onNavigate={navigateTo}
+            />
+          )}
 
-        {currentPage === 'projects' && (
-          <HomePage
-            onSelectProject={(proj) => navigateTo('project-detail', proj.slug)}
-            onHoverPlanet={setHoveredPlanet}
-            onNavigate={navigateTo}
-            onStartQuickTour={() => setQuickTourActive(true)}
-          />
-        )}
+          {currentPage === 'projects' && (
+            <HomePage
+              onSelectProject={(proj) => navigateTo('project-detail', proj.slug)}
+              onHoverPlanet={setHoveredPlanet}
+              onNavigate={navigateTo}
+              onStartQuickTour={() => setQuickTourActive(true)}
+            />
+          )}
 
-        {currentPage === 'project-detail' && (
-          <ProjectDetailPage
-            project={currentProject}
-            onNavigate={navigateTo}
-            onSelectProject={(proj) => navigateTo('project-detail', proj.slug)}
-          />
-        )}
+          {currentPage === 'project-detail' && (
+            <ProjectDetailPage
+              project={currentProject}
+              onNavigate={navigateTo}
+              onSelectProject={(proj) => navigateTo('project-detail', proj.slug)}
+            />
+          )}
 
-        {currentPage === 'constellation' && (
-          <ConstellationPage
-            onSelectProject={(proj) => navigateTo('project-detail', proj.slug)}
-            onNavigate={navigateTo}
-          />
-        )}
+          {currentPage === 'constellation' && (
+            <ConstellationPage
+              onSelectProject={(proj) => navigateTo('project-detail', proj.slug)}
+              onNavigate={navigateTo}
+            />
+          )}
 
-        {currentPage === 'skills' && (
-          <CockpitSkillsPage
-            onNavigate={navigateTo}
-          />
-        )}
+          {currentPage === 'skills' && (
+            <CockpitSkillsPage
+              onNavigate={navigateTo}
+            />
+          )}
 
-        {currentPage === 'about' && (
-          <AboutAstronautPage
-            onNavigate={navigateTo}
-          />
-        )}
+          {currentPage === 'about' && (
+            <AboutAstronautPage
+              onNavigate={navigateTo}
+            />
+          )}
 
-        {currentPage === 'lab' && (
-          <LabExperimentsPage
-            onNavigate={navigateTo}
-          />
-        )}
+          {currentPage === 'lab' && (
+            <LabExperimentsPage
+              activeSubTab={labSubTab}
+              onSubTabChange={(tab) => navigateTo(tab === 'moon' ? 'lab/moon' : 'lab', null, true)}
+              onNavigate={navigateTo}
+            />
+          )}
 
-        {currentPage === 'curiosity' && (
-          <CuriosityPage
-            onNavigate={navigateTo}
-          />
-        )}
+          {currentPage === 'curiosity' && (
+            <CuriosityPage
+              onNavigate={navigateTo}
+            />
+          )}
 
-        {currentPage === 'orbit' && (
-          <OrbitAmbitionsPage
-            onNavigate={navigateTo}
-          />
-        )}
+          {currentPage === 'orbit' && (
+            <OrbitAmbitionsPage
+              onNavigate={navigateTo}
+            />
+          )}
 
-        {currentPage === 'contact' && (
-          <ContactTransmissionPage
-            onNavigate={navigateTo}
-          />
-        )}
+          {currentPage === 'contact' && (
+            <ContactTransmissionPage
+              onNavigate={navigateTo}
+            />
+          )}
 
-        {currentPage === 'secret-signal' && (
-          <SecretSignalPage
-            onNavigate={navigateTo}
-          />
-        )}
+          {currentPage === 'secret-signal' && (
+            <SecretSignalPage
+              onNavigate={navigateTo}
+            />
+          )}
 
-        {currentPage === '404' && (
-          <NotFoundPage
-            onNavigate={navigateTo}
-          />
-        )}
+          {currentPage === '404' && (
+            <NotFoundPage
+              onNavigate={navigateTo}
+            />
+          )}
+        </Suspense>
       </main>
     </div>
   );

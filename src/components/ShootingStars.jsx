@@ -9,6 +9,19 @@ export default function ShootingStars({
 }) {
   const [activeStar, setActiveStar] = useState(null);
   const [activeFact, setActiveFact] = useState(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // Close modals on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setActiveFact(null);
+        setShowCelebration(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     // Schedule random star appearance every 14 to 20 seconds
@@ -53,6 +66,16 @@ export default function ShootingStars({
     setActiveFact(fact);
     setActiveStar(null);
     onStarCaught();
+
+    if (caughtCount + 1 === 10) {
+      setTimeout(() => {
+        sound.playVictory();
+        setShowCelebration(true);
+        try {
+          localStorage.setItem('mindverse_secret_unlocked', 'true');
+        } catch {}
+      }, 500);
+    }
   };
 
   return (
@@ -175,6 +198,91 @@ export default function ShootingStars({
                 Access Signal →
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 10-Star Celebratory Milestone Modal */}
+      {showCelebration && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Deep Space Clearance Unlocked"
+          onClick={() => setShowCelebration(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(5, 6, 15, 0.88)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '540px',
+              width: '100%',
+              background: 'radial-gradient(circle at 30% 20%, rgba(45, 226, 198, 0.25) 0%, rgba(11, 13, 36, 0.98) 100%)',
+              border: '2px solid var(--aurora-teal)',
+              boxShadow: '0 0 50px rgba(45, 226, 198, 0.4), 0 20px 60px rgba(0, 0, 0, 0.8)',
+              borderRadius: '36px 18px 32px 20px',
+              padding: '36px',
+              textAlign: 'center',
+              fontFamily: 'var(--font-mono)',
+              position: 'relative'
+            }}
+          >
+            <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>✦ 🌟 ✦</div>
+            <div style={{ color: 'var(--aurora-teal)', fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.14em', marginBottom: '12px' }}>
+              DEEP SPACE CLEARANCE UNLOCKED
+            </div>
+            <h2 className="font-display" style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginBottom: '16px', fontWeight: 800 }}>
+              10 Shooting Stars Harvested!
+            </h2>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--moonlight)', lineHeight: 1.6, marginBottom: '28px' }}>
+              You have tracked and caught 10 shooting stars across Commander Tilak's mindverse. The encrypted subspace frequency is now fully decrypted.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setShowCelebration(false);
+                  onNavigate('secret-signal');
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #2DE2C6 0%, #4CC9F0 100%)',
+                  border: 'none',
+                  borderRadius: '24px',
+                  padding: '12px 28px',
+                  color: '#05060F',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 24px rgba(45, 226, 198, 0.5)'
+                }}
+              >
+                Warp to Secret Signal 📡
+              </button>
+              <button
+                onClick={() => setShowCelebration(false)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '24px',
+                  padding: '12px 24px',
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Continue Exploring
+              </button>
+            </div>
           </div>
         </div>
       )}

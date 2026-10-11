@@ -132,16 +132,31 @@ export default function ConstellationPage({ onSelectProject, onNavigate }) {
               return (
                 <g
                   key={proj.slug}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Star node: ${proj.title}, ${proj.discipline}. Press Enter or Space to land on project.`}
                   onClick={() => {
                     sound.playPlanetChord(proj.planetType);
                     onSelectProject(proj);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      sound.playPlanetChord(proj.planetType);
+                      onSelectProject(proj);
+                    }
+                  }}
+                  onFocus={() => {
+                    sound.playHover();
+                    setHoveredStar(proj);
+                  }}
+                  onBlur={() => setHoveredStar(null)}
                   onMouseEnter={() => {
                     sound.playHover();
                     setHoveredStar(proj);
                   }}
                   onMouseLeave={() => setHoveredStar(null)}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: 'pointer', outline: 'none' }}
                 >
                   {/* Outer halo */}
                   <circle
@@ -149,7 +164,9 @@ export default function ConstellationPage({ onSelectProject, onNavigate }) {
                     cy={coord.y}
                     r={isHovered ? 28 : 15}
                     fill={proj.primaryColor}
-                    opacity={isHovered ? 0.4 : 0.18}
+                    opacity={isHovered ? 0.45 : 0.18}
+                    stroke={isHovered ? 'var(--stardust-gold)' : 'transparent'}
+                    strokeWidth={isHovered ? '2' : '0'}
                     style={{ transition: 'all 200ms ease' }}
                   />
                   {/* Central shining star */}
@@ -231,10 +248,20 @@ export default function ConstellationPage({ onSelectProject, onNavigate }) {
               <AsteroidPod
                 key={proj.slug}
                 accentColor={proj.primaryColor}
+                tabIndex={0}
+                role="button"
+                aria-label={`Project card: ${proj.title}, ${proj.discipline}. Press Enter to view case study.`}
                 onMouseEnter={() => sound.playHover()}
                 onClick={() => {
                   sound.playPlanetChord(proj.planetType);
                   onSelectProject(proj);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    sound.playPlanetChord(proj.planetType);
+                    onSelectProject(proj);
+                  }
                 }}
                 style={{
                   borderRadius: currentRadius,

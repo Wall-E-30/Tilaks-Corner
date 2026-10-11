@@ -257,6 +257,42 @@ export default function MissionControl({
             <span style={{ fontSize: '0.7rem' }}>↓</span>
           </a>
 
+          {/* Live Star Counter / Secret Clearance Badge */}
+          <button
+            onClick={() => {
+              sound.playClick();
+              if (caughtStarsCount >= 10) {
+                onNavigate('secret-signal');
+              }
+            }}
+            title={caughtStarsCount >= 10 ? 'Deep Space Clearance Active! Click to warp to Secret Signal' : `${caughtStarsCount}/10 Shooting Stars caught`}
+            aria-label={`Shooting stars caught: ${caughtStarsCount} of 10`}
+            className="hud-star-counter"
+            style={{
+              background: caughtStarsCount >= 10 ? 'rgba(255, 200, 87, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+              border: caughtStarsCount >= 10 ? '1.5px solid var(--stardust-gold)' : '1px solid rgba(138, 143, 176, 0.25)',
+              color: caughtStarsCount >= 10 ? 'var(--stardust-gold)' : 'var(--text-secondary)',
+              borderRadius: '16px',
+              padding: '6px 12px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.72rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: caughtStarsCount >= 10 ? 'pointer' : 'default',
+              boxShadow: caughtStarsCount >= 10 ? '0 0 14px rgba(255, 200, 87, 0.35)' : 'none',
+              transition: 'all 160ms ease'
+            }}
+          >
+            <span style={{ color: 'var(--stardust-gold)' }}>★</span>
+            <span>{caughtStarsCount}/10</span>
+            {caughtStarsCount >= 10 && (
+              <span style={{ fontSize: '0.62rem', background: 'var(--stardust-gold)', color: '#05060F', padding: '1px 5px', borderRadius: '8px', fontWeight: 700 }}>
+                CLEARANCE
+              </span>
+            )}
+          </button>
+
           {/* Sound Toggle (Opt-in) */}
           <button
             onClick={() => {
@@ -264,13 +300,16 @@ export default function MissionControl({
             }}
             title={soundActive ? 'Sound On (Web Audio Synth Active)' : 'Sound Off (Click to activate audio)'}
             aria-label="Toggle Sound"
+            className="hud-icon-btn"
             style={{
               background: soundActive ? 'rgba(45, 226, 198, 0.16)' : 'rgba(255, 255, 255, 0.05)',
               border: soundActive ? '1px solid var(--aurora-teal)' : '1px solid rgba(138, 143, 176, 0.25)',
               color: soundActive ? 'var(--aurora-teal)' : 'var(--asteroid-gray)',
               borderRadius: '4px',
-              width: '34px',
-              height: '34px',
+              width: '40px',
+              height: '40px',
+              minWidth: '40px',
+              minHeight: '40px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -289,13 +328,16 @@ export default function MissionControl({
             }}
             title={theme === 'eclipse' ? 'Return to Deep Void Dark Mode' : 'Switch to Solar Eclipse Light Mode'}
             aria-label="Toggle Theme"
+            className="hud-icon-btn"
             style={{
               background: 'rgba(255, 255, 255, 0.05)',
               border: '1px solid rgba(138, 143, 176, 0.25)',
               color: 'var(--text-primary)',
               borderRadius: '4px',
-              width: '34px',
-              height: '34px',
+              width: '40px',
+              height: '40px',
+              minWidth: '40px',
+              minHeight: '40px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -319,8 +361,10 @@ export default function MissionControl({
               border: '1px solid rgba(138, 143, 176, 0.3)',
               color: 'var(--text-primary)',
               borderRadius: '4px',
-              width: '36px',
-              height: '34px',
+              width: '44px',
+              height: '44px',
+              minWidth: '44px',
+              minHeight: '44px',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer'
@@ -370,6 +414,7 @@ export default function MissionControl({
                 border: currentPage === link.id ? '1px solid var(--stardust-gold)' : '1px solid rgba(138, 143, 176, 0.2)',
                 color: currentPage === link.id ? 'var(--stardust-gold)' : 'var(--text-primary)',
                 padding: '12px 18px',
+                minHeight: '48px',
                 borderRadius: '6px',
                 textAlign: 'left',
                 display: 'flex',
@@ -389,7 +434,7 @@ export default function MissionControl({
                 onNavigate('fast-lane');
               }}
               className="btn-fast-lane"
-              style={{ flex: 1 }}
+              style={{ flex: 1, minHeight: '44px' }}
             >
               ⚡ Fast Lane
             </button>
@@ -397,7 +442,7 @@ export default function MissionControl({
               href="/resume.pdf"
               download="Tilak-Resume.pdf"
               className="btn-secondary"
-              style={{ flex: 1, textAlign: 'center', justifyContent: 'center' }}
+              style={{ flex: 1, textAlign: 'center', justifyContent: 'center', minHeight: '44px' }}
             >
               Resume PDF ↓
             </a>
@@ -524,6 +569,14 @@ export default function MissionControl({
             display: none !important;
           }
           .hud-radar-minimap {
+            display: none !important;
+          }
+        }
+        @media (max-width: 640px) {
+          header {
+            padding: 0 12px !important;
+          }
+          .hud-star-counter {
             display: none !important;
           }
         }

@@ -199,6 +199,26 @@ class AudioEngine {
       // Audio fallback
     }
   }
+
+  playVictory() {
+    if (!this.isEnabled || !this.ctx) return;
+    try {
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      // Ascending triumphant cosmic fanfare: C5, E5, G5, C6 with layered shimmer
+      const fanfare = [
+        { freq: 523.25, time: 0, dur: 0.22, vol: 0.08 },    // C5
+        { freq: 659.25, time: 100, dur: 0.22, vol: 0.08 },  // E5
+        { freq: 783.99, time: 200, dur: 0.25, vol: 0.09 },  // G5
+        { freq: 1046.50, time: 320, dur: 0.55, vol: 0.12 }, // C6
+        { freq: 1318.51, time: 420, dur: 0.45, vol: 0.07 }  // E6 shimmer
+      ];
+      fanfare.forEach(({ freq, time, dur, vol }) => {
+        setTimeout(() => this.playTone(freq, 'sine', dur, vol), time);
+      });
+    } catch {
+      // Audio fallback
+    }
+  }
 }
 
 export const sound = new AudioEngine();

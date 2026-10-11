@@ -86,6 +86,9 @@ export default function SecretSignalPage({ onNavigate }) {
             <button
               onClick={() => {
                 sound.playClick();
+                try {
+                  window.location.hash = 'clearance';
+                } catch {}
                 onNavigate('contact');
               }}
               style={{
